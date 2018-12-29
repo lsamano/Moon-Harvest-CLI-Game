@@ -13,8 +13,9 @@ class Farmer < ActiveRecord::Base
       "farmer_id": self.id,
       "seed_bag_id": seed_bag.id,
       "days_planted": 0,
-      "watered?": 0,
-      "harvested?": 0
+      "watered": 0,
+      "harvested": 0,
+      "planted": 0
     )
   end
 end

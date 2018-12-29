@@ -52,15 +52,15 @@ class CommandLineInterface
   end
 
   def main_menu_array
-    [ "My Farmer", "Field", "Market", "Home", "Exit" ]
+    [ "Inventory", "Field", "Market", "Home", "Exit" ]
   end
 
   def game_menu
-    puts "Name:".colorize(:color => :magenta, :background => :light_white) + " #{farmer.name}"
+    puts "Name:".bold.colorize(:color => :green, :background => :light_white) + " #{farmer.name}"
     choice = the_prompt("MAIN MENU", main_menu_array)
     case choice
-    when "My Farmer"
-      go_to_status
+    when "Inventory"
+      go_to_inventory
     when "Field"
       go_to_field
     when "Market"
@@ -72,42 +72,126 @@ class CommandLineInterface
     end
   end
 
-  def go_to_status
-    stuff = farmer.seed_bags.pluck("seed_name")
-    new_stuff = stuff.each_with_object(Hash.new(0)) do |item, hash|
-      hash[item] += 1
+  def seed_bag_inventory_hash
+    stuff = farmer.seed_bags.where("planted = ?", 0).pluck("seed_name")
+    stuff.each_with_object(Hash.new(0)) do |seed_bag, hash|
+      hash[seed_bag] += 1
       #=> {"turnip"=>2, "radish"=>5}
     end
+  end
+
+  def go_to_inventory
+    puts "==========================================="
+    puts "                INVENTORY"
     puts "==========================================="
     puts ""
-    new_stuff.each do |crop, amount_owned|
+    seed_bag_inventory_hash.each do |crop, amount_owned|
       puts "#{crop}".upcase.bold
       puts "Bags owned: #{amount_owned}"
       puts "-------------------------------------------"
       puts ""
     end
-    puts ""
     puts "==========================================="
     puts ""
     game_menu
   end
 
+  def field_array
+    [ "Plant", "Water", "Harvest", "Destroy", "Exit" ]
+  end
+
   def go_to_field
+    puts "==========================================="
+    puts "                  FIELD"
+    puts "==========================================="
+    puts ""
+
     # list of planted crops and their watered status
-    # new prompt for water, harvest, uproot
+
+    planted_crop_array = farmer.crops.where("planted = ?", 1)
+    if planted_crop_array.empty?
+      puts "Your field is empty! Why not try planting some seeds?"
+    else
+      planted_crop_array.each do |crop|
+        # binding.pry
+        puts "#{crop.seed_bag.seed_name}".upcase.bold
+        puts "Days Planted: #{crop.days_planted}"
+        if crop.watered?
+          puts "Soil: The soil is nice and damp.".colorize(:cyan)
+        else
+          puts "Soil: The soil is dry.".colorize(:yellow)
+        end
+        puts "-------------------------------------------"
+        puts ""
+      end
+    end
+    # new prompt for plant, water, harvest, destroy
+    choice = the_prompt("What would you like to do?", field_array)
+    case choice
+    when "Plant"
+      array_of_unplanted = farmer.crops.where("planted = ?", 0)
+      # binding.pry
+      unplanted_hash = array_of_unplanted.each_with_object(Hash.new()) do |crop, hash|
+        hash[crop.seed_bag.seed_name] = crop
+      end
+      choice = the_prompt("Which seed would you like to plant?", unplanted_hash)
+      confirmation = the_prompt("Are you sure you want to plant #{choice.seed_bag.seed_name}?", ["Yes", "No"])
+      if confirmation == "Yes"
+        choice.update(planted: 1)
+        puts "Planted!"
+      end
+      go_to_field
+    when "Water"
+      unwatered_array = farmer.crops.where("planted = ?", 1).where("watered = ?", 0)
+      unwatered_hash = unwatered_array.each_with_object(Hash.new()) do |crop, hash|
+        hash[crop.seed_bag.seed_name] = crop
+      end
+      # binding.pry
+      # .pluck("seed_name")
+      if unwatered_array.empty?
+        puts "You have no crops that need to be watered!"
+      else
+        choice = the_prompt("Which crop would you like to water?", unwatered_hash)
+        choice.update(watered: 1)
+        puts "Watered!"
+      end
+      # Find choice and switch its watered stat to true/1
+      go_to_field
+    when "Harvest"
+      puts "Coming soon!"
+      go_to_field
+    when "Destroy"
+      puts "No, never. ):"
+      go_to_field
+    when "Exit"
+      game_menu
+    end
   end
 
   def go_to_market
-    choice = the_prompt("MARKETPLACE", ["Buy", "Sell", "Exit"])
+    puts "==========================================="
+    puts "               MARKETPLACE"
+    puts "==========================================="
+    choice = the_prompt("Vendor: Hello! What would you like to do?", ["Buy", "Sell", "Exit"])
     case choice
     when "Buy"
       #list of seeds and prices
+      puts "==========================================="
+      puts ""
+      SeedBag.all.each do |seed_bag|
+        puts "Name:  " + "#{seed_bag.seed_name}".upcase.bold
+        puts "Price: " + "#{seed_bag.price}".upcase.bold + " G"
+        puts "-------------------------------------------"
+        puts ""
+      end
       #new prompt selecting from list of seeds to buy
-      item = the_prompt("Buy Seed Bag?", ["Yes", "No"])
-      case item
+      choice = the_prompt("What would you like to purchase?", SeedBag.pluck("seed_name"))
+      chosen_bag = SeedBag.find_by(seed_name: choice)
+      confirmation = the_prompt("Buy one bag of #{choice}?", ["Yes", "No"])
+      case confirmation
       when "Yes"
-        new_crop = farmer.buy_seed_bag(SeedBag.first)
-        binding.pry
+        new_crop = farmer.buy_seed_bag(chosen_bag)
+        # binding.pry
       when "No"
         go_to_market
       end
@@ -120,6 +204,17 @@ class CommandLineInterface
   end
 
   def go_to_home
+    puts ""
+    puts "-------------------------------------------"
+    puts ""
+    puts "Your dog is quietly snoring on your bed..."
+    puts ""
+    puts "... But this is no time for resting!"
+    puts "* You head back outside. *".italic
+    puts ""
+    puts "-------------------------------------------"
+    puts ""
+    game_menu
     #Maybe flavor text of the dog doing various things?
     #Pet Dog, Sleep, Go Back Outside
   end

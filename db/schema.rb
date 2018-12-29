@@ -10,14 +10,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20181227183238) do
+ActiveRecord::Schema.define(version: 20181228002736) do
 
   create_table "crops", force: :cascade do |t|
     t.integer "farmer_id"
     t.integer "seed_bag_id"
     t.integer "days_planted"
-    t.integer "watered?"
-    t.integer "harvested?"
+    t.integer "watered"
+    t.integer "harvested"
+    t.integer "planted"
   end
 
   create_table "farmers", force: :cascade do |t|

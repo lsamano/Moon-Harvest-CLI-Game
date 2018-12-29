@@ -1,18 +1,25 @@
-### PRODUCTION LOG
+## PRODUCTION LOG
 
-#Dec 27, 2018
+### Dec 27, 2018
 - Added "seasons" column to seed_bags table.
-- Added Fall crops to database.
-  - Carrot, sweet potato, spinach, eggplant, bell pepper.
+- Added Fall crops to database. That is:
+  - Carrot, sweet potato, spinach, eggplant, bell pepper
 - Added counting method to count duplicate seed bags and print them neatly to
   the screen on the inventory page and planting screen (in Field).
+- User can buy single bags from the Market from a list of seed bags.
+- Renamed Status to Inventory, added functionality to Inventory.
+  - Inventory shows unplanted crops only.
+- Field shows list of planted crops only.
+  - Also shows watered status with colored text for ease of reading.
+- User can water crops in the field that are unwatered.
 
-    - Still need to:
+- Still need to:
+  - Add remaining actions to the Field (plant, harvest, destroy).
 
-#Dec 26, 2018
+### Dec 26, 2018
 - Planned out crops database, setting, and plot.
 
-#Dec 23, 2018
+### Dec 23, 2018
 - Created Start Screen Menu (New Game, Load Game, Exit).
   - User can create a farmer or select from existing farmers.
 - Created Main Game Menu (Status, Field, Market, Home, Exit).
@@ -29,7 +36,7 @@
   - Create SeedBag database with proper seeds in season.
   - Create Day counter of some sort.
 
-#Dec 22, 2018
+### Dec 22, 2018
 - Planned out app
   - "Lite" version of a farming simulator.
   - Create a farmer and grow and sell crops.
