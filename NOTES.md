@@ -1,5 +1,11 @@
 ## PRODUCTION LOG
 
+### Dec 29, 2018
+
+
+### Dec 28, 2018
+- Planned more.
+
 ### Dec 27, 2018
 - Added "seasons" column to seed_bags table.
 - Added Fall crops to database. That is:

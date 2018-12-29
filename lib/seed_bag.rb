@@ -1,4 +1,4 @@
 class SeedBag < ActiveRecord::Base
-  has_many :crops
-  has_many :farmers, through: :crops
+  belongs_to :farmer
+  belongs_to :crop_type
 end
