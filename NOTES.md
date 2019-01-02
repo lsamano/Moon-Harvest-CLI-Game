@@ -1,7 +1,59 @@
 ## PRODUCTION LOG
 
-### Dec 29, 2018
+### Dec 30, 2018
+- Planned more.
+- Updated crop_types table to include established sell prices.
+- Made it so that the player loses money when buying new seed bags.
 
+- Still need to:
+  - Fix Inventory to not be so large, or place it back on its own screen.
+
+### Dec 29, 2018
+- Made many edits to all tables:
+  - Renamed SeedBag to CropType
+  - Renamed Crop to SeedBag (the join table)
+  - In the new :seed_bags table (join table)
+    - Added :ripe (integer) column
+    - Renamed :days_planted to :growth
+    - Renamed :seed_bag_id to :crop_type_id
+  - In the new :crop_types table
+    - Added :sell_price (integer) column
+    - Renamed :price to :buy_price
+    - Renamed :seed_name to :crop_name
+  - In :farmers
+    - Added :day (integer) column
+    - Added :dog (string) column
+    - Added :season (string) column
+    - Added :money (integer) column
+
+- Added Sleep function, which
+  - increments farmer.day
+  - increments :growth on all watered crops
+  - Makes all watered crops dry again
+  - Checks all planted crops if they qualify as "ripe"
+    and flips on the boolean for it
+- Added Harvest function, which
+  - makes harvested = true and planted = false
+- Added Destroy function, which
+  - Allows you to destroy planted crops
+- Added Rename function in Home, which
+  - Allows you to rename your farmer
+  - Allows you to rename your dog
+
+- Reworked Inventory to separate seed bags from harvested crops.
+- Shows brief version of the inventory on the Plant screen.
+- Added default season of "fall" and 5000G upon character creation.
+- Added :money and :day to the top of the main game menu UI.
+- Added :growth as a percentage on the Field screen.
+- Reworked all select prompts to be able to show duplicate crop types.
+- Created "notice" helper method showing red text for ease of reading.
+- Refactored some things.
+
+- Still need to:
+  - Establish sell prices of the crop types in the database.
+  - Incorporate money functionality.
+  - Incorporate story plot.
+  - Add cleaner UI, graphics, and sounds.
 
 ### Dec 28, 2018
 - Planned more.
