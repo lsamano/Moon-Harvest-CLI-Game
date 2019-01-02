@@ -1,12 +1,21 @@
 ## PRODUCTION LOG
 
+### Jan 01, 2019
+- Added terminal-table gem and cleaned up table UIs.
+- Added some flavor texts to the Home.
+- Added ability to delete Farmer files from the opening screen.
+- Made it impossible to buy seed bags if the player doesn't have enough money.
+- Incorporated a storyline.
+  - Opening sequence established upon character creation.
+  - Game is finished when you complete your goal.
+- Refactored some code.
+
 ### Dec 30, 2018
 - Planned more.
 - Updated crop_types table to include established sell prices.
 - Made it so that the player loses money when buying new seed bags.
-
-- Still need to:
-  - Fix Inventory to not be so large, or place it back on its own screen.
+- Made it so that the player can sell all of their harvested crops at once.
+- Placed Inventory back on its own screen.
 
 ### Dec 29, 2018
 - Made many edits to all tables:

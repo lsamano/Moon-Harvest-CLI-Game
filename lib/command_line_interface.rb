@@ -1,5 +1,5 @@
 class CommandLineInterface
-  attr_accessor :farmer, :choice
+  attr_accessor :farmer, :choice, :warning_message, :success_message
 
   # Reusable TTY Prompts
   def select_prompt(string, array_of_choices)
@@ -20,12 +20,12 @@ class CommandLineInterface
   end
 
   # Reusable warning notice
-  def notice(string)
-    puts "-------------------------------------------"
+  def notice(string, color = :light_white)
+    puts "-----------------------------------------------"
     puts ""
-    puts string.colorize(:red)
+    puts string.colorize(color)
     puts ""
-    puts "-------------------------------------------"
+    puts "-----------------------------------------------"
     puts ""
   end
 
@@ -33,8 +33,7 @@ class CommandLineInterface
   def farming(action)
     hash = seed_bag_hash{action[:search]}
     if hash.empty?
-      system("clear")
-      notice(action[:empty])
+      @warning_message = action[:empty]
       go_to_field
     else
       if action == planting
@@ -45,8 +44,7 @@ class CommandLineInterface
         choice.update(planted: 0)
       end
       choice.update(action[:action])
-      system("clear")
-      notice(action[:done])
+      @success_message = action[:done]
       go_to_field
     end
   end
@@ -104,11 +102,11 @@ class CommandLineInterface
   def opening
     system("clear")
     # open "./audio/01 - Wonderful Life.mp3"
-    puts "==========================================="
+    puts "==============================================="
     puts ""
-    puts "Welcome to Harvest Moon: Command Line Town!"
+    puts "   Welcome to Moon Harvest: A Life in Space!"
     puts ""
-    puts "==========================================="
+    puts "==============================================="
     puts ""
   end
 
@@ -117,7 +115,7 @@ class CommandLineInterface
     if Farmer.all.empty?
       ["New Game", "Exit"]
     else
-      ["New Game", "Load Game", "Exit"]
+      ["New Game", "Load Game", "Delete File", "Exit"]
     end
   end
 
@@ -130,6 +128,8 @@ class CommandLineInterface
         character_creation
       when "Load Game"
         character_menu
+      when "Delete File"
+        character_deletion
       when "Exit"
         exit_message
     end
@@ -138,47 +138,113 @@ class CommandLineInterface
   # Start a New Game by creating a new Farmer
   def character_creation
     farmer_name = naming_prompt("What's your Farmer's name?")
-    self.farmer = Farmer.create(
-      name: farmer_name,
-      day: 1,
-      season: "fall",
-      money: 2000,
-      dog: "Astro"
-    )
-    puts "You are Farmer #{self.farmer.name}. Welcome!"
+    if Farmer.find_by(name: farmer_name)
+        notice("A Farmer by that name already exists! \nPlease choose a different name.", :red)
+        character_creation
+    else
+      self.farmer = Farmer.create(
+        name: farmer_name,
+        day: 1,
+        season: "fall",
+        money: 2000,
+        dog: "Astro"
+      )
+      notice("You are Farmer #{self.farmer.name}. Welcome!".bold, :magenta)
+      sleep(2.seconds)
+      opening_sequence
+    end
+  end
+
+  def opening_sequence
+    system("clear")
+    notice("One day, while at the market...")
+    gets
+    notice("... a small dog was on sale.")
+    gets
+    system("clear")
+    notice("Apparently, the dog had lost their owner recently.".bold)
+    gets
+    notice("Vendor: SpaceLyft will be here in 20 minutes to \ntake the dog to the kennel. \nI'd take 'em, but the missus is allergic.")
+    gets
+    system("clear")
+    notice("Do you want to take 'em?".bold)
+    choice = select_prompt("", ["Yes"])
+    dog_name = naming_prompt("Give your new dog a name.")
+    farmer.update(dog: dog_name)
+    notice("#{farmer.dog} looks at you with curious eyes...")
+    gets
+    notice("Your space farming life with \nyour new companion starts now!".bold)
+    gets
+    system("clear")
+    notice("... One week later...")
+    gets
+    notice("#{farmer.dog} is adjusting well to your farm life. \n\nHowever...")
+    gets
+    notice("It would be nice if you could buy #{farmer.dog} their own bed.".bold, :light_red)
+    gets
+    notice("One of the vendors at the marketplace is \nselling a dog bed for 10,000 G. \n\nMaybe you can buy it for #{farmer.dog}...?")
+    gets
+    system("clear")
+    notice("You decide to save up 10,000 G to buy a dog bed!".bold)
+    gets
+    game_menu
+  end
+
+  # Load the file of an existing Farmer
+  def character_menu
+    choice = select_prompt("Choose a File", Farmer.pluck("name"))
+    self.farmer = Farmer.find_by(name: choice)
+    notice("Welcome back, Farmer #{self.farmer.name}!", :magenta)
     puts ""
-    puts "-------------------------------"
-    puts ""
-    # prompt = TTY::Prompt.new
-    # dog_name = prompt.ask("What is your dog's name?", required: true)
-    # farmer.update(dog: dog_name)
     sleep(2.seconds)
     game_menu
   end
 
-  # Select an existing Farmer
-  def character_menu
-    choice = select_prompt("Choose a File", Farmer.pluck("name"))
+  # Delete a Farmer file
+  def character_deletion
+    choice = select_prompt("Choose a File to Delete", Farmer.pluck("name"))
     self.farmer = Farmer.find_by(name: choice)
-    notice("Welcome back, Farmer #{self.farmer.name}!")
-    puts ""
-    sleep(2.seconds)
-    game_menu
+    confirmation = select_prompt("Are you absolutely sure you want to delete #{farmer.name}'s file? \nWARNING: This CANNOT be undone!", ["Yes, delete #{farmer.name}!", "Nevermind."])
+    case confirmation
+    when "Yes, delete #{farmer.name}!"
+      farmer.destroy
+      notice("File destroyed.", :red)
+      sleep(2.seconds)
+      game_start
+    when "Nevermind."
+      game_start
+    end
   end
 
   # Header UI
   def status
+    system("clear")
     puts "Farmer #{farmer.name}".bold.colorize(:color => :black, :background => :light_white)
     puts "🌖 Day #{farmer.day}"
     puts "💰 #{farmer.money} G"
+    puts ""
+  end
+
+  def game_header(place)
+    status
+    puts "==============================================="
+    puts place
+    puts "==============================================="
+    if @warning_message
+      notice(@warning_message, :red)
+      @warning_message = nil
+    elsif @success_message
+      notice(@success_message, :light_green)
+      @success_message = nil
+    end
   end
 
   def main_menu_options
     [ "Inventory", "Field", "Home", "Market", "Exit" ]
   end
 
+  # Main menu prompt
   def game_menu
-    system("clear")
     status
     choice = select_prompt("MAIN MENU", main_menu_options)
     system("clear")
@@ -215,11 +281,7 @@ class CommandLineInterface
   end
 
   def show_inventory
-    system("clear")
-    puts "==========================================="
-    puts "                INVENTORY"
-    puts "==========================================="
-    puts ""
+    game_header("                   INVENTORY")
     if !seed_bag_inventory_hash.empty?
       rows = []
       seed_bag_inventory_hash.each do |seed_bag, amount_owned|
@@ -260,10 +322,9 @@ class CommandLineInterface
       puts "-------------------------------------------"
     end
     puts ""
-    # game_menu
   end
 
-  def field_array
+  def field_options
     [ "Water", "Plant", "Harvest", "Destroy", "Exit" ]
   end
 
@@ -271,7 +332,7 @@ class CommandLineInterface
   def print_planted_seeds
     planted_seed_array = farmer.seed_bags.where("planted = ?", 1)
     if planted_seed_array.empty?
-      notice("Your field is empty!\nWhy not try planting some seeds?")
+      notice("Your field is empty!\nWhy not try planting some seeds?", :red)
     else
       planted_seed_array.each do |seed_bag|
         puts "#{seed_bag.crop_type.crop_name}".upcase.bold
@@ -290,14 +351,11 @@ class CommandLineInterface
   end
 
   def go_to_field
-    puts "==========================================="
-    puts "                  FIELD"
-    puts "==========================================="
-    puts ""
+    game_header("                    FIELD")
     print_planted_seeds
 
     # new prompt for plant, water, harvest, destroy
-    choice = select_prompt("What would you like to do?", field_array)
+    choice = select_prompt("What would you like to do?", field_options)
     case choice
     when "Plant"
       farming(planting)
@@ -309,8 +367,7 @@ class CommandLineInterface
       planted_array = farmer.seed_bags.where("planted = ?", 1)
 
       if planted_array.empty?
-        system("clear")
-        notice("There's nothing in your field to destroy!")
+        @warning_message = "There's nothing in your field to destroy!"
         go_to_field
       else
         #puts brief numbered list of field crops
@@ -334,6 +391,7 @@ class CommandLineInterface
           choice.destroy
           system("clear")
           notice("The crop was destroyed...")
+          sleep(2.seconds)
           go_to_field
         when "Nevermind"
           go_to_field
@@ -344,12 +402,14 @@ class CommandLineInterface
     end
   end
 
+  def crop_options
+    array = CropType.pluck("crop_name")
+    array << "Exit"
+  end
+
   def go_to_market
-    status
-    puts "==========================================="
-    puts "               MARKETPLACE"
-    puts "==========================================="
-    choice = select_prompt("Vendor: Hello! What would you like to do?", ["Buy", "Sell", "Exit"])
+    game_header("                 MARKETPLACE")
+    choice = select_prompt("Vendor: What would you like to do?", ["Buy", "Sell", "About that Dog Bed...", "Exit"])
     case choice
     when "Buy"
       #list of seeds and prices
@@ -370,26 +430,36 @@ class CommandLineInterface
       puts ""
 
       #new prompt selecting from list of seeds to buy
-      choice = select_prompt("What would you like to purchase?", CropType.pluck("crop_name"))
-      chosen_bag = CropType.find_by(crop_name: choice)
-      confirmation = select_prompt("Buy one bag of #{choice}?", ["Yes", "No"])
-      case confirmation
-      when "Yes"
-        new_crop = farmer.buy_seed_bag(chosen_bag)
-        farmer.money -= chosen_bag.buy_price
-        farmer.save
-        system("clear")
-        notice("You bought a bag of #{choice} seeds!")
+      choice = select_prompt("Vendor: What would you like to purchase?", crop_options)
+      if choice == "Exit"
         go_to_market
-        # binding.pry
-      when "No"
-        system("clear")
-        go_to_market
+      else
+        chosen_bag = CropType.find_by(crop_name: choice)
+        # Checks if the farmer has enough money to make the purchase.
+        if chosen_bag.buy_price > farmer.money
+          # system("clear")
+          @warning_message = "Vendor: You don't have enough money to buy that!"
+          # sleep(2.seconds)
+          go_to_market
+        else
+          confirmation = select_prompt("Buy one bag of #{choice}?", ["Yes", "No"])
+          case confirmation
+          when "Yes"
+            new_crop = farmer.buy_seed_bag(chosen_bag)
+            farmer.money -= chosen_bag.buy_price
+            farmer.save
+            @success_message = "You bought a bag of #{choice} seeds!"
+            go_to_market
+          when "No"
+            system("clear")
+            go_to_market
+          end
+        end
       end
+
     when "Sell"
       if ripe_seed_inventory_hash.empty?
-        system("clear")
-        notice("Vendor: Doesn't look like you have any crops to sell me.")
+        @warning_message = "Vendor: Doesn't look like you have any crops \nto sell me."
       else
         total = 0
         ripe_seed_inventory_hash.each do |crop_name, amount|
@@ -408,36 +478,41 @@ class CommandLineInterface
           end
           farmer.money += total
           farmer.save
-          notice("You sold all your crops for a profit!\nYou now have #{farmer.money} G.")
-          sleep(2.seconds)
-          system("clear")
+          @success_message = "You sold all your crops for a profit! \nYou now have #{farmer.money} G."
         end
       end
-      # system("clear")
       go_to_market
+
+    when "About that Dog Bed..."
+      game_header("                 MARKETPLACE")
+      sentence = "Vendor: Oh, that thing? It costs " + "10,000".bold + " G."
+      notice(sentence, :magenta)
+      choice = select_prompt("Do you want to buy it?", ["Yes", "No"])
+      case choice
+      when "Yes"
+        if farmer.money < 10000
+          @warning_message = "Vendor: Sorry, but you don't have enough cash! \nCome back when you have 10,000 G."
+          go_to_market
+        else
+          game_finish
+        end
+      when "No"
+        go_to_market
+      end
     when "Exit"
       game_menu
     end
   end
 
-  def home_array
+  def home_options
     [ "Sleep", "Rename...", "Go Outside" ]
   end
 
   def go_to_home
-    puts "==========================================="
-    puts "                  HOME"
-    puts "==========================================="
-    puts ""
-    puts "#{farmer.dog}".colorize(:magenta) + " is quietly snoring on your bed..."
-    # puts ""
-    # puts "... But this is no time for resting!"
-    # puts "* You head back outside. *".italic
-    puts ""
-    puts "-------------------------------------------"
-    puts ""
+    game_header("                    HOME")
+    notice(dog_flavor_text_array.sample, :magenta)
 
-    choice = select_prompt("What would you like to do?", home_array)
+    choice = select_prompt("What would you like to do?", home_options)
     case choice
     when "Sleep"
       farmer.increment!(:day)
@@ -451,6 +526,11 @@ class CommandLineInterface
           seed_bag.update(ripe: 1)
         end
       end
+      system("clear")
+      notice("You fell asleep...", :light_blue)
+      sleep(1.seconds)
+      notice("Good morning!", :light_yellow)
+      sleep(1.seconds)
       game_menu
     when "Rename..."
       choice = select_prompt("Who would you like to rename?", ["#{farmer.name}", "#{farmer.dog}", "Nevermind"])
@@ -469,16 +549,30 @@ class CommandLineInterface
     when "Go Outside"
       game_menu
     end
-    #Maybe flavor text of the dog doing various things?
-    #Pet Dog, Sleep, Go Outside
+  end
+
+  def dog_flavor_text_array
+    [
+      "#{farmer.dog} is quietly snoring on your bed...",
+      "Oh no! #{farmer.dog} found their way into the \nfridge and ate all of the string cheese!",
+      "#{farmer.dog} seems to have constructed their \nown fort, made entirely of your boots.",
+      "#{farmer.dog} excitedly jumps at you, barking. \nWelcome home!",
+      "#{farmer.dog} is watching the Galactic News Network \non TV. Space Pirates appear to wreaking \nhavoc again..."
+    ]
   end
 
   def exit_message
-    puts "==========================================="
+    puts "==============================================="
     puts ""
-    puts "                Good Bye!"
+    puts "                   Good Bye!"
     puts ""
-    puts "==========================================="
+    puts "==============================================="
     return puts ""
+  end
+
+  def game_finish
+    system("clear")
+    notice("Yay! You bought a dog bed for #{farmer.dog}!".bold, :light_green)
+    gets
   end
 end
