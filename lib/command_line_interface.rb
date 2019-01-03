@@ -527,9 +527,9 @@ class CommandLineInterface
         end
       end
       system("clear")
-      notice("You fell asleep...", :light_blue)
+      notice("🌕 You fell asleep...", :light_blue)
       sleep(1.seconds)
-      notice("Good morning!", :light_yellow)
+      notice("☀️  Good morning!", :light_yellow)
       sleep(1.seconds)
       game_menu
     when "Rename..."
