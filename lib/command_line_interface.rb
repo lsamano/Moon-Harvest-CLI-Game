@@ -1,5 +1,5 @@
 class CommandLineInterface
-  attr_accessor :farmer, :choice, :warning_message, :success_message
+  attr_accessor :farmer, :choice, :warning_message, :success_message, :chosen_livestock
 
   # Reusable TTY Prompts
   def select_prompt(string, array_of_choices)
@@ -8,7 +8,8 @@ class CommandLineInterface
   end
   def naming_prompt(string)
     prompt = TTY::Prompt.new
-    prompt.ask(string, required: true)
+    name = prompt.ask(string, required: true)
+    name.chomp
   end
 
   # Numbered list of seed bags owned. Yields to the search criteria to narrow
@@ -147,7 +148,7 @@ class CommandLineInterface
         day: 1,
         season: "fall",
         money: 2000,
-        dog: "Astro"
+        barn_count: 2
       )
       notice("You are Farmer #{self.farmer.name}. Welcome!".bold, :magenta)
       sleep(2.seconds)
@@ -240,7 +241,7 @@ class CommandLineInterface
   end
 
   def main_menu_options
-    [ "Inventory", "Field", "Home", "Market", "Exit" ]
+    [ "Inventory", "Field", "Barn", "Home", "Market", "Exit" ]
   end
 
   # Main menu prompt
@@ -255,6 +256,8 @@ class CommandLineInterface
       game_menu
     when "Field"
       go_to_field
+    when "Barn"
+      go_to_barn
     when "Market"
       go_to_market
     when "Home"
@@ -407,6 +410,81 @@ class CommandLineInterface
     array << "Exit"
   end
 
+  def go_to_barn
+    game_header("                      BARN")
+    # List of animals and their Status
+    #Prompt to choose an animal or exit
+    if livestocks_hash.empty?
+      notice("You have no livestock!",:red)
+      barn_options = ["Exit"]
+    else
+      print_livestocks
+      barn_options = ["Select Animal", "Exit"]
+    end
+    choice = select_prompt("What would you like to do?", barn_options)
+    case choice
+    when "Select Animal"
+      @chosen_livestock = select_prompt("Choose one of your livestock.", livestocks_hash)
+      pick_an_animal
+    when "Exit"
+      game_menu
+    end
+  end
+
+  def livestocks_hash
+    livestocks_array = farmer.livestocks
+    livestocks_array.each_with_object({}).with_index{ |(livestock, hash), index| hash["#{index+1}. #{livestock.name}"] = livestock}
+  end
+
+  def pick_an_animal
+    game_header("                      BARN")
+    print_livestocks
+    choice = select_prompt("What would you like to do to #{chosen_livestock.name}?", ["Brush", "Feed", "Milk/Shear", "Go Back"])
+    case choice
+    when "Brush"
+      animal_care("brush")
+    when "Feed"
+      animal_care("feed")
+    when "Milk/Shear"
+    when "Go Back"
+      go_to_barn
+    end
+  end
+
+  def print_livestocks
+    my_livestocks = farmer.livestocks
+    rows = []
+    my_livestocks.each do |livestock|
+      one_row = []
+      one_row << "#{livestock.name}".upcase.bold
+      one_row << "#{livestock.animal.species}".capitalize
+      hearts = ""
+      number_of_hearts = (livestock.love.to_f/2).ceil
+      number_of_hearts.times {|i| hearts << "❤️ "}
+      one_row << "#{hearts}"
+      one_row << (livestock.brushed? ? "✅" : "🔳")
+      one_row << (livestock.fed? ? "✅" : "🔳")
+      rows << one_row
+    end
+    livestock_table = Terminal::Table.new :title => "LIVESTOCK".colorize(:magenta), :headings => ['Name', 'Type', 'Care Meter', 'Brushed', 'Fed'], :rows => rows
+    livestock_table.align_column(3, :center)
+    livestock_table.align_column(4, :center)
+    puts livestock_table
+  end
+
+  def animal_care(action)
+    if action == "brush"
+      chosen_livestock.update(brushed: 1)
+      @success_message = "You brushed #{chosen_livestock.name}! They seem to like it."
+      pick_an_animal
+    elsif action == "feed"
+      chosen_livestock.update(fed: 1)
+      @success_message = "You fed #{chosen_livestock.name}! They seem to like it."
+      pick_an_animal
+    end
+
+  end
+
   def go_to_market
     game_header("                 MARKETPLACE")
     choice = select_prompt("Vendor: What would you like to do?", ["Buy", "Sell", "About that Dog Bed...", "Exit"])
@@ -526,6 +604,20 @@ class CommandLineInterface
           seed_bag.update(ripe: 1)
         end
       end
+
+      # Animals updated
+      livestock_array = farmer.livestocks
+      livestock_array.each do |livestock|
+        if livestock.counter < livestock.animal.frequency
+          livestock.increment!(:counter)
+        end
+        if livestock.fed? && livestock.brushed? && livestock.love < 10
+          livestock.increment!(:love)
+        end
+        livestock.update(fed: 0)
+        livestock.update(brushed: 0)
+      end
+
       system("clear")
       notice("🌕 You fell asleep...", :light_blue)
       sleep(1.seconds)
@@ -537,12 +629,19 @@ class CommandLineInterface
       case choice
       when "#{farmer.name}"
         new_name = naming_prompt("What is my new name?")
-        farmer.update(name: new_name)
-        game_menu
+        if Farmer.find_by(name: new_name)
+            @warning_message = "A Farmer by that name already exists! \nPlease choose a different name."
+            return go_to_home
+        else
+          farmer.update(name: new_name)
+          @success_message = "You've been renamed!"
+          return go_to_home
+        end
       when "#{farmer.dog}"
         new_name = naming_prompt("What is your dog's new name?")
         farmer.update(dog: new_name)
-        game_menu
+        @success_message = "Your dog has been renamed!"
+        return go_to_home
       when "Nevermind"
         go_to_home
       end
