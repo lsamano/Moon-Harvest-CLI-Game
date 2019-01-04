@@ -1,5 +1,11 @@
 ## PRODUCTION LOG
 
+### Jan 04, 2019
+- Added cow and sheep, ability to get their products, and sell them.
+
+### Jan 03, 2019
+- Created branch "adding_animals" in order to add a barn and three new models.
+
 ### Jan 01, 2019
 - Added terminal-table gem and cleaned up table UIs.
 - Added some flavor texts to the Home.
