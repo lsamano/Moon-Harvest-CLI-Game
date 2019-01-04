@@ -341,14 +341,16 @@ class CommandLineInterface
       rows = []
       product_inventory_hash.each do |product, amount|
         one_row = []
-        # binding.pry
+        animal = Animal.find_by(product_name: product)
         one_row << "#{product.upcase.bold}"
+        one_row << "#{animal.sell_price} G"
         one_row << "x#{amount}"
         rows << one_row
         # puts "#{product.upcase.bold} x#{amount}"
       end
-      animal_table = Terminal::Table.new :title => "ANIMAL PRODUCTS".colorize(:magenta), :headings => ['Name', 'Amount Owned'], :rows => rows
+      animal_table = Terminal::Table.new :title => "ANIMAL PRODUCTS".colorize(:magenta), :headings => ['Name', 'Price per Item', 'Amount Owned'], :rows => rows
       animal_table.align_column(1, :center)
+      animal_table.align_column(2, :center)
       puts animal_table
     else
       puts "ANIMAL PRODUCTS".colorize(:magenta)
