@@ -150,6 +150,10 @@ class CommandLineInterface
         money: 2000,
         barn_count: 2
       )
+      cow_name = naming_prompt("What's your cow's name?")
+      sheep_name = naming_prompt("What's your sheep's name?")
+      Livestock.create(animal_id: Animal.first.id, farmer_id: farmer.id, name: cow_name, love: 1, brushed: 0, fed: 0, counter: 1)
+      Livestock.create(animal_id: Animal.last.id, farmer_id: farmer.id, name: sheep_name, love: 1, brushed: 0, fed: 0, counter: 1)
       notice("You are Farmer #{self.farmer.name}. Welcome!".bold, :magenta)
       sleep(2.seconds)
       opening_sequence
@@ -159,6 +163,7 @@ class CommandLineInterface
   def opening_sequence
     system("clear")
     notice("One day, while at the market...")
+    puts "Note: Press enter to advance...".colorize(:white)
     gets
     notice("... a small dog was on sale.")
     gets
@@ -283,6 +288,13 @@ class CommandLineInterface
     #=> {"turnip"=>2, "radish"=>5} For harvested crops
   end
 
+  def product_inventory_hash
+    product_array = farmer.products.where("farmer_id = ?", farmer.id) #.map{ |i| i.livestock.animal.product_name}
+    product_array.each_with_object(Hash.new(0)) do |product_instance, inv_hash|
+      inv_hash[product_instance.livestock.animal.product_name] += 1
+    end
+  end
+
   def show_inventory
     game_header("                   INVENTORY")
     if !seed_bag_inventory_hash.empty?
@@ -325,6 +337,35 @@ class CommandLineInterface
       puts "-------------------------------------------"
     end
     puts ""
+    if !product_inventory_hash.empty?
+      rows = []
+      product_inventory_hash.each do |product, amount|
+        one_row = []
+        # binding.pry
+        one_row << "#{product.upcase.bold}"
+        one_row << "x#{amount}"
+        rows << one_row
+        # puts "#{product.upcase.bold} x#{amount}"
+      end
+      animal_table = Terminal::Table.new :title => "ANIMAL PRODUCTS".colorize(:magenta), :headings => ['Name', 'Amount Owned'], :rows => rows
+      animal_table.align_column(1, :center)
+      puts animal_table
+    else
+      puts "ANIMAL PRODUCTS".colorize(:magenta)
+      puts "None."
+      puts "-------------------------------------------"
+      # rows = []
+      # product_inventory_hash.each do |product_name, amount_owned|
+      #   what_product = Product.find_by(crop_name: product)
+      #   one_row = []
+      #
+      #   rows << one_row
+      # end
+      # table = Terminal::Table.new :title => "HARVESTED CROPS".colorize(:light_green), :headings => ['Name', 'Price per Crop','Amount Owned'], :rows => rows
+      # table.align_column(1, :center)
+      # table.align_column(2, :center)
+      # puts table
+    end
   end
 
   def field_options
@@ -446,6 +487,7 @@ class CommandLineInterface
     when "Feed"
       animal_care("feed")
     when "Milk/Shear"
+      animal_care("get product")
     when "Go Back"
       go_to_barn
     end
@@ -464,11 +506,14 @@ class CommandLineInterface
       one_row << "#{hearts}"
       one_row << (livestock.brushed? ? "✅" : "🔳")
       one_row << (livestock.fed? ? "✅" : "🔳")
+      product_emoji = livestock.counter < livestock.animal.frequency ? "❌" : "⭕️"
+      one_row << product_emoji
       rows << one_row
     end
-    livestock_table = Terminal::Table.new :title => "LIVESTOCK".colorize(:magenta), :headings => ['Name', 'Type', 'Care Meter', 'Brushed', 'Fed'], :rows => rows
+    livestock_table = Terminal::Table.new :title => "LIVESTOCK".colorize(:magenta), :headings => ['Name', 'Type', 'Care Meter', 'Brushed', 'Fed', 'Product Ready?'], :rows => rows
     livestock_table.align_column(3, :center)
     livestock_table.align_column(4, :center)
+    livestock_table.align_column(5, :center)
     puts livestock_table
   end
 
@@ -481,15 +526,29 @@ class CommandLineInterface
       chosen_livestock.update(fed: 1)
       @success_message = "You fed #{chosen_livestock.name}! They seem to like it."
       pick_an_animal
+    elsif action == "get product"
+      if chosen_livestock.counter < chosen_livestock.animal.frequency
+        @warning_message = "#{chosen_livestock.name} is not ready for you to do that!"
+        return pick_an_animal
+      else
+        Product.create(livestock_id: chosen_livestock.id, farmer_id: farmer.id)
+        chosen_livestock.update(counter: 0)
+        if chosen_livestock.animal.species == "cow"
+          @success_message = "You milked #{chosen_livestock.name}!"
+        elsif chosen_livestock.animal.species == "sheep"
+          @success_message = "You sheared #{chosen_livestock.name}'s wool!"
+        end
+        return pick_an_animal
+      end
     end
 
   end
 
   def go_to_market
     game_header("                 MARKETPLACE")
-    choice = select_prompt("Vendor: What would you like to do?", ["Buy", "Sell", "About that Dog Bed...", "Exit"])
+    choice = select_prompt("Vendor: What would you like to do?", ["Buy Seeds", "Sell Crops", "Sell Animal Products", "About that Dog Bed...", "Exit"])
     case choice
-    when "Buy"
+    when "Buy Seeds"
       #list of seeds and prices
       puts "==========================================="
       puts ""
@@ -535,7 +594,7 @@ class CommandLineInterface
         end
       end
 
-    when "Sell"
+    when "Sell Crops"
       if ripe_seed_inventory_hash.empty?
         @warning_message = "Vendor: Doesn't look like you have any crops \nto sell me."
       else
@@ -577,6 +636,36 @@ class CommandLineInterface
       when "No"
         go_to_market
       end
+    when "Sell Animal Products"
+      if product_inventory_hash.empty?
+        @warning_message = "Vendor: Doesn't look like you have anything \nto sell me."
+      else
+        total = 0
+        product_array = farmer.products.where("farmer_id = ?", farmer.id)
+        new_product_hash = product_array.each_with_object(Hash.new(0)) do |product_instance, inv_hash|
+          inv_hash[product_instance.livestock.animal.product_name] += 1
+        end
+        # binding.pry
+        new_product_hash.each do |product_name, amount|
+          animal = Animal.find_by(product_name: product_name)
+          subtotal = animal.sell_price * amount
+          puts "#{product_name}".upcase.bold.colorize(:magenta) + " x #{amount} = #{subtotal} G"
+          total += subtotal
+        end
+        puts "TOTAL: #{total} G".bold.colorize(:light_green)
+        choice = select_prompt("Would you like to sell all of your animal products for #{total} G?", ["Yes, sell them all!", "No"])
+        case choice
+        when "Yes, sell them all!"
+          product_array.each do |product_instance|
+            # binding.pry
+            product_instance.destroy
+          end
+          farmer.money += total
+          farmer.save
+          @success_message = "You sold all your animal products for a profit! \nYou now have #{farmer.money} G."
+        end
+      end
+      go_to_market
     when "Exit"
       game_menu
     end
@@ -671,7 +760,11 @@ class CommandLineInterface
 
   def game_finish
     system("clear")
+    farmer.money -= 10000
+    farmer.save
     notice("Yay! You bought a dog bed for #{farmer.dog}!".bold, :light_green)
+    notice("                     FIN".bold, :light_magenta)
+    puts "Press enter to exit.".colorize(:white)
     gets
   end
 end
