@@ -31,5 +31,5 @@ You are a farmer on the moon. One day, at the local Marketplace, one of the vend
 - Check your inventory at any time
 
 ## Credits
-This game is heavily inspired by the Harvest Moon / Story of Seasons (known in Japan as Bokujō Monogatari) game series by Marvelous Entertainment.
+This game is heavily inspired by the Harvest Moon / Story of Seasons game series (known in Japan as Bokujō Monogatari) by Marvelous Entertainment.
 This game was created as a Module 1 project for Flatiron School.
