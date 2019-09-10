@@ -6,28 +6,28 @@ CropType.destroy_all
 Animal.destroy_all
 Farmer.destroy_all
 
-# Make New Default Farmer
-farmer = Farmer.create(name: "Clarabelle")
-
 # Create Animals
 cow = Animal.create(
   species: "cow",
   product_name: "milk",
   sell_price: 400,
   frequency: 1
-)
+  )
 sheep = Animal.create(
   species: "sheep",
   product_name: "wool",
   sell_price: 1000,
   frequency: 3
-)
+  )
+    
+# Make New Default Farmer
+farmer = Farmer.create(name: "Clarabelle")
 
 # Create Livestock for Default Farmer
 bessie = Livestock.create(animal_id: cow.id, farmer_id: farmer.id, name: "Bessie", love: 1, brushed: 0, fed: 0, counter: 1)
 wooly = Livestock.create(animal_id: sheep.id, farmer_id: farmer.id, name: "Wooly", love: 1, brushed: 0, fed: 0, counter: 1)
 
-# Create Products
+# Create Products for Default Farmer
 Product.create(livestock_id: bessie.id, farmer_id: farmer.id)
 Product.create(livestock_id: wooly.id, farmer_id: farmer.id)
 

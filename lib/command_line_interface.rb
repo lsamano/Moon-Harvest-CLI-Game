@@ -6,6 +6,7 @@ class CommandLineInterface
     prompt = TTY::Prompt.new
     prompt.select(string, array_of_choices)
   end
+
   def naming_prompt(string)
     prompt = TTY::Prompt.new
     name = prompt.ask(string, required: true)
@@ -99,15 +100,27 @@ class CommandLineInterface
     first_menu
   end
 
+  def start_audio(string)
+    pid = fork{ exec 'afplay', string }
+  end
+
+  def stop_audio
+    pid = fork{ exec "killall", 'afplay' }
+  end
+
   # Opening header
   def opening
     system("clear")
+    start_audio("./audio/01.mp3")
     # open "./audio/01 - Wonderful Life.mp3"
+    puts ""
+    puts ""
     puts "==============================================="
     puts ""
     puts "   Welcome to Moon Harvest: A Life in Space!"
     puts ""
     puts "==============================================="
+    puts ""
     puts ""
   end
 
@@ -126,13 +139,13 @@ class CommandLineInterface
     #choice = choice.parameterize.underscore converts choice to snake_case
     case choice
     when "New Game"
-        character_creation
-      when "Load Game"
-        character_menu
-      when "Delete File"
-        character_deletion
-      when "Exit"
-        exit_message
+      character_creation
+    when "Load Game"
+      character_menu
+    when "Delete File"
+      character_deletion
+    when "Exit"
+      exit_message
     end
   end
 
@@ -140,8 +153,8 @@ class CommandLineInterface
   def character_creation
     farmer_name = naming_prompt("What's your Farmer's name?")
     if Farmer.find_by(name: farmer_name)
-        notice("A Farmer by that name already exists! \nPlease choose a different name.", :red)
-        character_creation
+      notice("A Farmer by that name already exists! \nPlease choose a different name.", :red)
+      return character_creation
     else
       self.farmer = Farmer.create(
         name: farmer_name,
@@ -721,8 +734,8 @@ class CommandLineInterface
       when "#{farmer.name}"
         new_name = naming_prompt("What is my new name?")
         if Farmer.find_by(name: new_name)
-            @warning_message = "A Farmer by that name already exists! \nPlease choose a different name."
-            return go_to_home
+          @warning_message = "A Farmer by that name already exists! \nPlease choose a different name."
+          return go_to_home
         else
           farmer.update(name: new_name)
           @success_message = "You've been renamed!"
@@ -747,7 +760,8 @@ class CommandLineInterface
       "Oh no! #{farmer.dog} found their way into the \nfridge and ate all of the string cheese!",
       "#{farmer.dog} seems to have constructed their \nown fort, made entirely of your boots.",
       "#{farmer.dog} excitedly jumps at you, barking. \nWelcome home!",
-      "#{farmer.dog} is watching the Galactic News Network \non TV. Space Pirates appear to wreaking \nhavoc again..."
+      "#{farmer.dog} is watching the Galactic News Network \non TV. Space Pirates appear to wreaking \nhavoc again...",
+      "Gasp! #{farmer.dog} is missing! \n... Oh wait, they're right there on the sofa."
     ]
   end
 
@@ -757,6 +771,7 @@ class CommandLineInterface
     puts "                   Good Bye!"
     puts ""
     puts "==============================================="
+    stop_songs
     return puts ""
   end
 
