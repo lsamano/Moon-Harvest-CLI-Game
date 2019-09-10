@@ -206,6 +206,8 @@ class CommandLineInterface
     system("clear")
     notice("You decide to save up 10,000 G to buy a dog bed!".bold)
     gets
+    stop_audio
+    start_audio("./audio/02.mp3")
     game_menu
   end
 
@@ -215,7 +217,11 @@ class CommandLineInterface
     self.farmer = Farmer.find_by(name: choice)
     notice("Welcome back, Farmer #{self.farmer.name}!", :magenta)
     puts ""
-    sleep(2.seconds)
+    sleep(1.seconds)
+
+    stop_audio
+    sleep(1.seconds)
+    start_audio("./audio/02.mp3")
     game_menu
   end
 
@@ -771,7 +777,7 @@ class CommandLineInterface
     puts "                   Good Bye!"
     puts ""
     puts "==============================================="
-    stop_songs
+    stop_audio
     return puts ""
   end
 
