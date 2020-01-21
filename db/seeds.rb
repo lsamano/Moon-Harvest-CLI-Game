@@ -19,7 +19,7 @@ sheep = Animal.create(
   sell_price: 1000,
   frequency: 3
   )
-    
+
 # Make New Default Farmer
 farmer = Farmer.create(name: "Clarabelle")
 
@@ -66,4 +66,41 @@ CropType.create(
   buy_price: 510,
   season: "fall",
   sell_price: 2250
+)
+
+## Summer Crops
+CropType.create(
+  crop_name: "pumpkin",
+  days_to_grow: 4,
+  buy_price: 180,
+  season: "summer",
+  sell_price: 1620
+)
+CropType.create(
+  crop_name: "watermelon",
+  days_to_grow: 7,
+  buy_price: 360,
+  season: "summer",
+  sell_price: 3060
+)
+CropType.create(
+  crop_name: "onion",
+  days_to_grow: 6,
+  buy_price: 270,
+  season: "summer",
+  sell_price: 1260
+)
+CropType.create(
+  crop_name: "corn",
+  days_to_grow: 14,
+  buy_price: 140,
+  season: "summer",
+  sell_price: 3960
+)
+CropType.create(
+  crop_name: "tomato",
+  days_to_grow: 12,
+  buy_price: 110,
+  season: "summer",
+  sell_price: 3240
 )
