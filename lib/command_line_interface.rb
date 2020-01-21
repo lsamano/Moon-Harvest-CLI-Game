@@ -767,7 +767,10 @@ class CommandLineInterface
       "#{farmer.dog} seems to have constructed their \nown fort, made entirely of your boots.",
       "#{farmer.dog} excitedly jumps at you, barking. \nWelcome home!",
       "#{farmer.dog} is watching the Galactic News Network \non TV. Space Pirates appear to wreaking \nhavoc again...",
-      "Gasp! #{farmer.dog} is missing! \n... Oh wait, they're right there on the sofa."
+      "Gasp! #{farmer.dog} is missing! \n... Oh wait, they're right there on the sofa.",
+      "#{farmer.dog} is playing with their favorite toy.\n It squeaks as they gnaw on it.",
+      "#{farmer.dog} is watching TV. There is a \nparakeet on a branch. #{farmer.dog} really \nwants to touch it!",
+      "#{farmer.dog} is starting to look a bit dirty. \nTime for a bath!"
     ]
   end
 
