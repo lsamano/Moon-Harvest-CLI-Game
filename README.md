@@ -2,9 +2,10 @@
 Moon Harvest is a farming simulation game, set on the moon. It is a CLI game made with Ruby.
 
 ## Installation
-Clone this repo and run the following code in your terminal:
+Clone this repo, change directory into the folder, and run the following code in your terminal:
 ```
-$ ruby bin/run.rb
+bundle
+ruby bin/run.rb
 ```
 
 ## The Story
