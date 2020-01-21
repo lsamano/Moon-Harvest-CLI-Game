@@ -35,7 +35,7 @@ class CommandLineInterface
   def farming(action)
     hash = seed_bag_hash{action[:search]}
     if hash.empty?
-      @warning_message = action[:empty]
+      self.warning_message = action[:empty]
       go_to_field
     else
       if action == planting
@@ -46,7 +46,7 @@ class CommandLineInterface
         choice.update(planted: 0)
       end
       choice.update(action[:action])
-      @success_message = action[:done]
+      self.success_message = action[:done]
       go_to_field
     end
   end
@@ -255,12 +255,12 @@ class CommandLineInterface
     puts "==============================================="
     puts place
     puts "==============================================="
-    if @warning_message
-      notice(@warning_message, :red)
-      @warning_message = nil
-    elsif @success_message
-      notice(@success_message, :light_green)
-      @success_message = nil
+    if self.warning_message
+      notice(self.warning_message, :red)
+      self.warning_message = nil
+    elsif self.success_message
+      notice(self.success_message, :light_green)
+      self.success_message = nil
     end
   end
 
@@ -326,7 +326,11 @@ class CommandLineInterface
         one_row << "x#{amount_owned}"
         rows << one_row
       end
-      table = Terminal::Table.new :title => "SEED BAGS".colorize(:yellow), :headings => ['Name', 'Days to Grow', 'Amount Owned'], :rows => rows
+      table = Terminal::Table.new(
+        title: "SEED BAGS".colorize(:yellow),
+        headings: ['Name', 'Days to Grow', 'Amount Owned'],
+        rows: rows
+      )
       table.align_column(1, :center)
       table.align_column(2, :center)
       puts table
@@ -346,7 +350,11 @@ class CommandLineInterface
         one_row << "x#{amount_owned}"
         rows << one_row
       end
-      table = Terminal::Table.new :title => "HARVESTED CROPS".colorize(:light_green), :headings => ['Name', 'Price per Crop','Amount Owned'], :rows => rows
+      table = Terminal::Table.new(
+        title: "HARVESTED CROPS".colorize(:light_green),
+        headings: ['Name', 'Price per Crop','Amount Owned'],
+        rows: rows
+      )
       table.align_column(1, :center)
       table.align_column(2, :center)
       puts table
@@ -367,7 +375,11 @@ class CommandLineInterface
         rows << one_row
         # puts "#{product.upcase.bold} x#{amount}"
       end
-      animal_table = Terminal::Table.new :title => "ANIMAL PRODUCTS".colorize(:magenta), :headings => ['Name', 'Price per Item', 'Amount Owned'], :rows => rows
+      animal_table = Terminal::Table.new(
+        title: "ANIMAL PRODUCTS".colorize(:magenta),
+        headings: ['Name', 'Price per Item', 'Amount Owned'],
+        rows: rows
+      )
       animal_table.align_column(1, :center)
       animal_table.align_column(2, :center)
       puts animal_table
@@ -375,17 +387,6 @@ class CommandLineInterface
       puts "ANIMAL PRODUCTS".colorize(:magenta)
       puts "None."
       puts "-------------------------------------------"
-      # rows = []
-      # product_inventory_hash.each do |product_name, amount_owned|
-      #   what_product = Product.find_by(crop_name: product)
-      #   one_row = []
-      #
-      #   rows << one_row
-      # end
-      # table = Terminal::Table.new :title => "HARVESTED CROPS".colorize(:light_green), :headings => ['Name', 'Price per Crop','Amount Owned'], :rows => rows
-      # table.align_column(1, :center)
-      # table.align_column(2, :center)
-      # puts table
     end
   end
 
@@ -432,7 +433,7 @@ class CommandLineInterface
       planted_array = farmer.seed_bags.where("planted = ?", 1)
 
       if planted_array.empty?
-        @warning_message = "There's nothing in your field to destroy!"
+        self.warning_message = "There's nothing in your field to destroy!"
         go_to_field
       else
         #puts brief numbered list of field crops
@@ -486,7 +487,7 @@ class CommandLineInterface
     choice = select_prompt("What would you like to do?", barn_options)
     case choice
     when "Select Animal"
-      @chosen_livestock = select_prompt("Choose one of your livestock.", livestocks_hash)
+      self.chosen_livestock = select_prompt("Choose one of your livestock.", livestocks_hash)
       pick_an_animal
     when "Exit"
       game_menu
@@ -541,23 +542,23 @@ class CommandLineInterface
   def animal_care(action)
     if action == "brush"
       chosen_livestock.update(brushed: 1)
-      @success_message = "You brushed #{chosen_livestock.name}! They seem to like it."
+      self.success_message = "You brushed #{chosen_livestock.name}! They seem to like it."
       pick_an_animal
     elsif action == "feed"
       chosen_livestock.update(fed: 1)
-      @success_message = "You fed #{chosen_livestock.name}! They seem to like it."
+      self.success_message = "You fed #{chosen_livestock.name}! They seem to like it."
       pick_an_animal
     elsif action == "get product"
       if chosen_livestock.counter < chosen_livestock.animal.frequency
-        @warning_message = "#{chosen_livestock.name} is not ready for you to do that!"
+        self.warning_message = "#{chosen_livestock.name} is not ready for you to do that!"
         return pick_an_animal
       else
         Product.create(livestock_id: chosen_livestock.id, farmer_id: farmer.id)
         chosen_livestock.update(counter: 0)
         if chosen_livestock.animal.species == "cow"
-          @success_message = "You milked #{chosen_livestock.name}!"
+          self.success_message = "You milked #{chosen_livestock.name}!"
         elsif chosen_livestock.animal.species == "sheep"
-          @success_message = "You sheared #{chosen_livestock.name}'s wool!"
+          self.success_message = "You sheared #{chosen_livestock.name}'s wool!"
         end
         return pick_an_animal
       end
@@ -596,7 +597,7 @@ class CommandLineInterface
         # Checks if the farmer has enough money to make the purchase.
         if chosen_bag.buy_price > farmer.money
           # system("clear")
-          @warning_message = "Vendor: You don't have enough money to buy that!"
+          self.warning_message = "Vendor: You don't have enough money to buy that!"
           # sleep(2.seconds)
           go_to_market
         else
@@ -606,7 +607,7 @@ class CommandLineInterface
             new_crop = farmer.buy_seed_bag(chosen_bag)
             farmer.money -= chosen_bag.buy_price
             farmer.save
-            @success_message = "You bought a bag of #{choice} seeds!"
+            self.success_message = "You bought a bag of #{choice} seeds!"
             go_to_market
           when "No"
             system("clear")
@@ -617,7 +618,7 @@ class CommandLineInterface
 
     when "Sell Crops"
       if ripe_seed_inventory_hash.empty?
-        @warning_message = "Vendor: Doesn't look like you have any crops \nto sell me."
+        self.warning_message = "Vendor: Doesn't look like you have any crops \nto sell me."
       else
         total = 0
         ripe_seed_inventory_hash.each do |crop_name, amount|
@@ -636,7 +637,7 @@ class CommandLineInterface
           end
           farmer.money += total
           farmer.save
-          @success_message = "You sold all your crops for a profit! \nYou now have #{farmer.money} G."
+          self.success_message = "You sold all your crops for a profit! \nYou now have #{farmer.money} G."
         end
       end
       go_to_market
@@ -649,7 +650,7 @@ class CommandLineInterface
       case choice
       when "Yes"
         if farmer.money < 10000
-          @warning_message = "Vendor: Sorry, but you don't have enough cash! \nCome back when you have 10,000 G."
+          self.warning_message = "Vendor: Sorry, but you don't have enough cash! \nCome back when you have 10,000 G."
           go_to_market
         else
           game_finish
@@ -659,7 +660,7 @@ class CommandLineInterface
       end
     when "Sell Animal Products"
       if product_inventory_hash.empty?
-        @warning_message = "Vendor: Doesn't look like you have anything \nto sell me."
+        self.warning_message = "Vendor: Doesn't look like you have anything \nto sell me."
       else
         total = 0
         product_array = farmer.products.where("farmer_id = ?", farmer.id)
@@ -683,7 +684,7 @@ class CommandLineInterface
           end
           farmer.money += total
           farmer.save
-          @success_message = "You sold all your animal products for a profit! \nYou now have #{farmer.money} G."
+          self.success_message = "You sold all your animal products for a profit! \nYou now have #{farmer.money} G."
         end
       end
       go_to_market
@@ -740,17 +741,17 @@ class CommandLineInterface
       when "#{farmer.name}"
         new_name = naming_prompt("What is my new name?")
         if Farmer.find_by(name: new_name)
-          @warning_message = "A Farmer by that name already exists! \nPlease choose a different name."
+          self.warning_message = "A Farmer by that name already exists! \nPlease choose a different name."
           return go_to_home
         else
           farmer.update(name: new_name)
-          @success_message = "You've been renamed!"
+          self.success_message = "You've been renamed!"
           return go_to_home
         end
       when "#{farmer.dog}"
         new_name = naming_prompt("What is your dog's new name?")
         farmer.update(dog: new_name)
-        @success_message = "Your dog has been renamed!"
+        self.success_message = "Your dog has been renamed!"
         return go_to_home
       when "Nevermind"
         go_to_home
