@@ -13,16 +13,6 @@ class CommandLineInterface
     name.chomp
   end
 
-  # Numbered list of seed bags owned. Yields to the search criteria to narrow
-  # what is listed
-  def seed_bag_hash
-    array = yield
-    array.each_with_object({}).with_index { |(seed_bag, hash), index|
-      hash["#{index+1}. #{seed_bag.crop_type.crop_name}"] = seed_bag
-    }
-    #=> {"1. Turnip"=> <seed_bag_instance>, "2. Tomato"=> <seed_bag_instance>}
-  end
-
   # Reusable warning notice
   def notice(string, color = :light_white)
     puts "-----------------------------------------------"
@@ -35,65 +25,23 @@ class CommandLineInterface
 
   # Method for farming actions that affect the field
   def farming(action)
-    hash = seed_bag_hash{action[:search]}
+    hash = farmer.seed_bag_hash{action[:search]}
     if hash.empty?
       self.warning_message = action[:empty]
       go_to_field
     else
-      if action == planting
-        brief_inventory
+      if action == farmer.planting
+        puts "SEED BAGS IN INVENTORY".colorize(:yellow)
+        farmer.brief_inventory
       end
       choice = select_prompt(action[:choose], hash)
-      if action == harvesting
+      if action == farmer.harvesting
         choice.update(planted: 0)
       end
       choice.update(action[:action])
       self.success_message = action[:done]
       go_to_field
     end
-  end
-
-  # Hash containing planting actions
-  def planting
-    {
-      search: farmer.seed_bags.where("planted = ?", 0).where("harvested = ?", 0),
-      empty: "You have no seeds you can plant!",
-      choose: "Which seed would you like to plant?",
-      done: "Planted!",
-      action: {planted: 1}
-    }
-  end
-
-  # Hash containing harvesting actions
-  def harvesting
-    {
-      search: farmer.seed_bags.where("planted = ?", 1).where("ripe = ?", 1),
-      empty: "You have no crops you can harvest right now!",
-      choose: "What would you like to harvest?",
-      done: "Harvested!",
-      action: {harvested: 1}
-    }
-  end
-
-  # Hash containing watering actions
-  def watering
-    {
-      search: farmer.seed_bags.where("planted = ?", 1).where("watered = ?", 0).where("ripe = ?", 0),
-      empty: "You have no crops that need to be watered!",
-      choose: "Which crop would you like to water?",
-      done: "Watered!",
-      action: {watered: 1}
-    }
-  end
-
-  # Briefly lists seed bags in inventory
-  def brief_inventory
-    puts "SEED BAGS IN INVENTORY".colorize(:yellow)
-    seed_bag_inventory_hash.each do |crop_name, amount|
-      puts "#{crop_name}".upcase.bold + " x#{amount}"
-    end
-    #=> TURNIP x4
-    #=> TOMATO x1
   end
 
   # Method called to start the game
@@ -136,7 +84,7 @@ class CommandLineInterface
     if Farmer.all.empty?
       ["New Game", "Exit"]
     else
-      ["New Game", "Load Game", "Delete File", "Exit"]
+      ["Load Game", "New Game", "Delete File", "Exit"]
     end
   end
 
@@ -251,6 +199,7 @@ class CommandLineInterface
     puts ""
   end
 
+  # Reusable game header
   def game_header(place)
     status
     puts "==============================================="
@@ -295,34 +244,11 @@ class CommandLineInterface
     end
   end
 
-  def seed_bag_inventory_hash
-    seed_name_array = farmer.crop_types.where("planted = ?", 0).where("harvested = ?", 0).pluck("crop_name")
-    seed_name_array.each_with_object(Hash.new(0)) do |crop_name, inv_hash|
-      inv_hash[crop_name] += 1
-    end
-    #=> {"turnip"=>2, "radish"=>5} For unplanted seed bags
-  end
-
-  def ripe_seed_inventory_hash
-    seed_name_array = farmer.crop_types.where("planted = ?", 0).where("harvested = ?", 1).pluck("crop_name")
-    seed_name_array.each_with_object(Hash.new(0)) do |crop_name, inv_hash|
-      inv_hash[crop_name] += 1
-    end
-    #=> {"turnip"=>2, "radish"=>5} For harvested crops
-  end
-
-  def product_inventory_hash
-    product_array = farmer.products.where("farmer_id = ?", farmer.id) #.map{ |i| i.livestock.animal.product_name}
-    product_array.each_with_object(Hash.new(0)) do |product_instance, inv_hash|
-      inv_hash[product_instance.livestock.animal.product_name] += 1
-    end
-  end
-
   def show_inventory
     game_header("                   INVENTORY")
-    if !seed_bag_inventory_hash.empty?
+    if !farmer.seed_bag_inventory_hash.empty?
       rows = []
-      seed_bag_inventory_hash.each do |seed_bag, amount_owned|
+      farmer.seed_bag_inventory_hash.each do |seed_bag, amount_owned|
         crop = CropType.find_by(crop_name: seed_bag)
         one_row = []
         one_row << "#{seed_bag}".upcase.bold
@@ -344,9 +270,9 @@ class CommandLineInterface
       puts "-------------------------------------------"
     end
     puts ""
-    if !ripe_seed_inventory_hash.empty?
+    if !farmer.ripe_seed_inventory_hash.empty?
       rows = []
-      ripe_seed_inventory_hash.each do |ripe_seed, amount_owned|
+      farmer.ripe_seed_inventory_hash.each do |ripe_seed, amount_owned|
         crop = CropType.find_by(crop_name: ripe_seed)
         one_row = []
         one_row << "#{ripe_seed}".upcase.bold
@@ -368,9 +294,9 @@ class CommandLineInterface
       puts "-------------------------------------------"
     end
     puts ""
-    if !product_inventory_hash.empty?
+    if !farmer.product_inventory_hash.empty?
       rows = []
-      product_inventory_hash.each do |product, amount|
+      farmer.product_inventory_hash.each do |product, amount|
         one_row = []
         animal = Animal.find_by(product_name: product)
         one_row << "#{product.upcase.bold}"
@@ -428,11 +354,11 @@ class CommandLineInterface
     choice = select_prompt("What would you like to do?", field_options)
     case choice
     when "Plant"
-      farming(planting)
+      farming(farmer.planting)
     when "Water"
-      farming(watering)
+      farming(farmer.watering)
     when "Harvest"
-      farming(harvesting)
+      farming(farmer.harvesting)
     when "Destroy"
       planted_array = farmer.seed_bags.where("planted = ?", 1)
 
@@ -445,7 +371,7 @@ class CommandLineInterface
           puts "#{index+1}. #{planted_seed_bag.crop_type.crop_name}     Growth: #{(planted_seed_bag.growth/planted_seed_bag.crop_type.days_to_grow.to_f*100).round(1)}%"
         end
 
-        planted_hash = seed_bag_hash{planted_array}
+        planted_hash = farmer.seed_bag_hash{planted_array}
         #planted_array.each_with_object({}).with_index{ |(seed_bag, hash), index| hash["#{index+1}. #{seed_bag.crop_type.crop_name}"] = seed_bag}
         choice = select_prompt("What would you like to destroy?", planted_hash)
         puts "-------------------------------------------"
@@ -481,7 +407,7 @@ class CommandLineInterface
     game_header("                      BARN")
     # List of animals and their Status
     #Prompt to choose an animal or exit
-    if livestocks_hash.empty?
+    if farmer.livestocks_hash.empty?
       notice("You have no livestock!",:red)
       barn_options = ["Exit"]
     else
@@ -491,16 +417,11 @@ class CommandLineInterface
     choice = select_prompt("What would you like to do?", barn_options)
     case choice
     when "Select Animal"
-      self.chosen_livestock = select_prompt("Choose one of your livestock.", livestocks_hash)
+      self.chosen_livestock = select_prompt("Choose one of your livestock.", farmer.livestocks_hash)
       pick_an_animal
     when "Exit"
       game_menu
     end
-  end
-
-  def livestocks_hash
-    livestocks_array = farmer.livestocks
-    livestocks_array.each_with_object({}).with_index{ |(livestock, hash), index| hash["#{index+1}. #{livestock.name}"] = livestock}
   end
 
   def pick_an_animal
@@ -621,11 +542,11 @@ class CommandLineInterface
       end
 
     when "Sell Crops"
-      if ripe_seed_inventory_hash.empty?
+      if farmer.ripe_seed_inventory_hash.empty?
         self.warning_message = "Vendor: Doesn't look like you have any crops \nto sell me."
       else
         total = 0
-        ripe_seed_inventory_hash.each do |crop_name, amount|
+        farmer.ripe_seed_inventory_hash.each do |crop_name, amount|
           crop = CropType.find_by(crop_name: crop_name)
           subtotal = crop.sell_price * amount
           puts "#{crop_name}".upcase.bold.colorize(:magenta) + " x #{amount} = #{subtotal} G"
@@ -663,7 +584,7 @@ class CommandLineInterface
         go_to_market
       end
     when "Sell Animal Products"
-      if product_inventory_hash.empty?
+      if farmer.product_inventory_hash.empty?
         self.warning_message = "Vendor: Doesn't look like you have anything \nto sell me."
       else
         total = 0
@@ -726,7 +647,7 @@ class CommandLineInterface
 
   def go_to_home
     game_header("                    HOME")
-    notice(dog_flavor_text_array.sample, :magenta)
+    notice(farmer.dog_flavor_text_array.sample, :magenta)
 
     choice = select_prompt("What would you like to do?", home_options)
     case choice
@@ -786,20 +707,6 @@ class CommandLineInterface
     when "Go Outside"
       game_menu
     end
-  end
-
-  def dog_flavor_text_array
-    [
-      "#{farmer.dog} is quietly snoring on your bed...",
-      "Oh no! #{farmer.dog} found their way into the \nfridge and ate all of the string cheese!",
-      "#{farmer.dog} seems to have constructed their \nown fort, made entirely of your boots.",
-      "#{farmer.dog} excitedly jumps at you, barking. \nWelcome home!",
-      "#{farmer.dog} is watching the Galactic News Network \non TV. Space Pirates appear to wreaking \nhavoc again...",
-      "Gasp! #{farmer.dog} is missing! \n... Oh wait, they're right there on the sofa.",
-      "#{farmer.dog} is playing with their favorite toy.\n It squeaks as they gnaw on it.",
-      "#{farmer.dog} is watching TV. There is a \nparakeet on a branch. #{farmer.dog} really \nwants to touch it!",
-      "#{farmer.dog} is starting to look a bit dirty. \nTime for a bath!"
-    ]
   end
 
   def exit_message
