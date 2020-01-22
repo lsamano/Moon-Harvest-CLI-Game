@@ -156,13 +156,7 @@ class CommandLineInterface
       notice("A Farmer by that name already exists! \nPlease choose a different name.", :red)
       return character_creation
     else
-      self.farmer = Farmer.create(
-        name: farmer_name,
-        day: 1,
-        season: "fall",
-        money: 2000,
-        barn_count: 2
-      )
+      self.farmer = Farmer.create(name: farmer_name)
       cow_name = naming_prompt("What's your cow's name?")
       sheep_name = naming_prompt("What's your sheep's name?")
       Livestock.create(animal_id: Animal.first.id, farmer_id: farmer.id, name: cow_name, love: 1, brushed: 0, fed: 0, counter: 1)

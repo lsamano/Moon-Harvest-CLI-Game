@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20190104172045) do
+ActiveRecord::Schema.define(version: 20200122172257) do
 
   create_table "animals", force: :cascade do |t|
     t.string  "species"
@@ -29,11 +29,11 @@ ActiveRecord::Schema.define(version: 20190104172045) do
 
   create_table "farmers", force: :cascade do |t|
     t.string  "name"
-    t.integer "day"
+    t.integer "day",        default: 1
     t.string  "dog"
-    t.string  "season"
-    t.integer "money"
-    t.integer "barn_count"
+    t.string  "season",     default: "fall"
+    t.integer "money",      default: 2000
+    t.integer "barn_count", default: 2
   end
 
   create_table "livestocks", force: :cascade do |t|

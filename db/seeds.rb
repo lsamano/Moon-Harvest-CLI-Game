@@ -6,7 +6,9 @@ CropType.destroy_all
 Animal.destroy_all
 Farmer.destroy_all
 
-# Create Animals
+######################################################
+## Create Animals
+######################################################
 cow = Animal.create(
   species: "cow",
   product_name: "milk",
@@ -20,17 +22,9 @@ sheep = Animal.create(
   frequency: 3
   )
 
-# Make New Default Farmer
-farmer = Farmer.create(name: "Clarabelle")
-
-# Create Livestock for Default Farmer
-bessie = Livestock.create(animal_id: cow.id, farmer_id: farmer.id, name: "Bessie", love: 1, brushed: 0, fed: 0, counter: 1)
-wooly = Livestock.create(animal_id: sheep.id, farmer_id: farmer.id, name: "Wooly", love: 1, brushed: 0, fed: 0, counter: 1)
-
-# Create Products for Default Farmer
-Product.create(livestock_id: bessie.id, farmer_id: farmer.id)
-Product.create(livestock_id: wooly.id, farmer_id: farmer.id)
-
+######################################################
+## Crop Creation
+######################################################
 ## Fall Crops
 CropType.create(
   crop_name: "carrot",
@@ -156,4 +150,37 @@ CropType.create(
 #   buy_price: 180,
 #   season: "spring",
 #   sell_price: 810
+# )
+
+
+# ######################################################
+# ## Gift Creation
+# ######################################################
+# susans = Gift.create(
+#   name: "Black-Eyed Susan",
+#   flavor_text: "A painful-sounding name for a quaint flower.",
+#   buy_price: 1100,
+#   sell_price: 275
+# )
+# teddy = Gift.create(
+#   name: "Teddy Bear",
+#   flavor_text: "Stares into your soul. But you like it.",
+#   buy_price: 2000,
+#   sell_price: 500
+# )
+# tiramisu = Gift.create(
+#   name: "Tiramisu",
+#   flavor_text: "As fun to eat as it is to say!",
+#   buy_price: 500,
+#   sell_price: 125
+# )
+#
+# ######################################################
+# ## Character Creation
+# ######################################################
+# # Create Characters
+# Character.create(
+#   name: "Clarabelle",
+#   gift_to_give_id: susans.id,
+#   fave_gift_id: susans.id
 # )
