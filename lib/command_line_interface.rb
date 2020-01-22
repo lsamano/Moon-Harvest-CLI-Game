@@ -17,7 +17,9 @@ class CommandLineInterface
   # what is listed
   def seed_bag_hash
     array = yield
-    array.each_with_object({}).with_index{ |(seed_bag, hash), index| hash["#{index+1}. #{seed_bag.crop_type.crop_name}"] = seed_bag}
+    array.each_with_object({}).with_index { |(seed_bag, hash), index|
+      hash["#{index+1}. #{seed_bag.crop_type.crop_name}"] = seed_bag
+    }
     #=> {"1. Turnip"=> <seed_bag_instance>, "2. Tomato"=> <seed_bag_instance>}
   end
 
@@ -101,18 +103,23 @@ class CommandLineInterface
   end
 
   def start_audio(string)
-    pid = fork{ exec 'afplay', string }
+    # change to true to turn on BGM, along with line 111
+    if false
+      pid = fork{ exec 'afplay', string }
+    end
   end
 
   def stop_audio
-    pid = fork{ exec "killall", 'afplay' }
+    # change to true to turn on BGM, along with line 104
+    if false
+      pid = fork{ exec "killall", 'afplay' }
+    end
   end
 
   # Opening header
   def opening
     system("clear")
     start_audio("./audio/01.mp3")
-    # open "./audio/01 - Wonderful Life.mp3"
     puts ""
     puts ""
     puts "==============================================="
@@ -259,12 +266,13 @@ class CommandLineInterface
   end
 
   def main_menu_options
-    [ "Inventory", "Field", "Barn", "Home", "Market", "Exit" ]
+    [ "Inventory", "Field", "Barn", "Home", "Town", "Market", "Exit" ]
   end
 
   # Main menu prompt
   def game_menu
     status
+    game_header("                 YOUR FARM")
     choice = select_prompt("MAIN MENU", main_menu_options)
     system("clear")
     case choice
@@ -280,6 +288,8 @@ class CommandLineInterface
       go_to_market
     when "Home"
       go_to_home
+    when "Town"
+      go_to_town
     when "Exit"
       exit_message
     end
@@ -562,7 +572,7 @@ class CommandLineInterface
 
   def go_to_market
     game_header("                 MARKETPLACE")
-    choice = select_prompt("Vendor: What would you like to do?", ["Buy Seeds", "Sell Crops", "Sell Animal Products", "About that Dog Bed...", "Exit"])
+    choice = select_prompt("Vendor: What would you like to do?", ["Buy Seeds", "Sell Crops", "Sell Animal Products", "About that Dog Bed...", "Go To Farm", "Go To Town"])
     case choice
     when "Buy Seeds"
       #list of seeds and prices
@@ -682,7 +692,30 @@ class CommandLineInterface
         end
       end
       go_to_market
-    when "Exit"
+    when "Go To Farm"
+      game_menu
+    when "Go To Town"
+      go_to_town
+    end
+  end
+
+  def go_to_town
+    puts "town entered"
+    game_header("                    TOWN")
+    notice("Welcome to Prospera Town!", :yellow)
+
+    choice = select_prompt("What would you like to do?", ["Speak to Clara", "Go To Market", "Back to Farm"])
+
+    case choice
+    when "Speak to Clara"
+      system("clear")
+      string = "\nYou say hello to Clara. \nShe glances up and gives you a slight \nnod before returning to her notebook.\n "
+      notice(string)
+      select_prompt("Press Enter to Exit.", ["Exit"])
+      go_to_town
+    when "Go To Market"
+      go_to_market
+    when "Back to Farm"
       game_menu
     end
   end
