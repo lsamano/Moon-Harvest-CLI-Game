@@ -8,12 +8,7 @@ class Farmer < ActiveRecord::Base
   def buy_seed_bag(crop_type)
     SeedBag.create(
       "farmer_id": self.id,
-      "crop_type_id": crop_type.id,
-      "growth": 0,
-      "watered": 0,
-      "harvested": 0,
-      "planted": 0,
-      "ripe": 0
+      "crop_type_id": crop_type.id
     )
   end
 end

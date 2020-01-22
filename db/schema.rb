@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200122172257) do
+ActiveRecord::Schema.define(version: 20200122193513) do
 
   create_table "animals", force: :cascade do |t|
     t.string  "species"
@@ -54,11 +54,11 @@ ActiveRecord::Schema.define(version: 20200122172257) do
   create_table "seed_bags", force: :cascade do |t|
     t.integer "farmer_id"
     t.integer "crop_type_id"
-    t.integer "growth"
-    t.integer "watered"
-    t.integer "harvested"
-    t.integer "planted"
-    t.integer "ripe"
+    t.integer "growth",       default: 0
+    t.integer "watered",      default: 0
+    t.integer "harvested",    default: 0
+    t.integer "planted",      default: 0
+    t.integer "ripe",         default: 0
   end
 
 end
